@@ -6,6 +6,8 @@ Chosen year groupings are the 20th century (1906-1999) and 21st century (2000-20
 
 Interpretation of results actually changes depending on the test used, and are limited by way of the 21st century group being much smaller in sample size. 
 
+My interpretation of the binomial test is slightly different than what appeared in the Excel sheet, but they should be the same test, and looks like results are as well...
+
 
 
 
@@ -59,6 +61,8 @@ For the 21st century group (2000-2013), the results are that we fail to reject t
 The interpretation is: we fail to reject the null, meaning drought years occur just as frequently in 21st century as non-drought years. This can be compared to the 20th century, but results are not really reliable as the sample size for the 21st century group is much smaller.
 
 Adding in 2014 as either a drought (value = 1) or non-drought (value = 0) does not change the results: for the 21st century group, test results suggest drought years are just as likely to occur as non-drought years.
+
+I also tried this with an expected probability of 0.3 (expectation that drought year proportion is 30%) [what you calculated in Excel]; in that case, we fail to reject the null for all year groupings [different than the results you got - I'm assuming because I'm using R, different calculation or test??]. Regardless of the classification of 2014, the test shows that the data do not statistically diverge from the assumption of drought years happening 30% of the time.
 
 ## Fisher Test
 
