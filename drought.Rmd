@@ -1,0 +1,207 @@
+# Drought Occurance Proportion Tests
+
+Data is binomial categorization of drought (drought year = 1, non-drought year = 0) in California from 1906 - 2014, with 2014 being assigned either a 1 or 0 value to see if classification as drought or non-drought changes statistical test results.
+
+Chosen year groupings are the 20th century (1906-1999) and 21st century (2000-2013, or 2000-2014).
+
+Interpretation of results actually changes depending on the test used, and are limited by way of the 21st century group being much smaller in sample size. 
+
+```{r, echo=FALSE}
+
+#### Set Up
+
+# set working directory
+rm(list= ls());
+master <- "/Users/mcl/Dropbox/Year4/random/drought"
+setwd(master)
+
+data <- read.csv("drought.csv")
+data[109,] <- c(2014,NA) # no drought
+
+i20 <- which(data[ ,'Year'] %in% 1906:1999)
+i21 <- which(data[ ,'Year'] %in% 2000:2013)
+i21d <- which(data[ ,'Year'] %in% 2000:2014)
+
+```
+
+## Exact Binomial Test
+
+This test compares a single group (e.g. the 20th or 21st century year classifications) to a hypothetical value. It tests the statistical significance of deviations from a theoretically expected distribution of observations into two categories (drought or non-drought). This is basically testing against some 'expected' proportion of times you expect to see drought, which here we assume to be 50/50 - the 'null hypothesis' is that drought is as likely as no drought. This test is ok for small sample sizes.
+
+```{r, echo=FALSE}
+
+###### Exact Binomial Test
+
+bt20 <- binom.test(sum(data[i20,"Drought"]), length(i20), p = 0.5) # reject null, p of success is 0.30, p-value = 0.0002617 (significant) ~ drought is less likely to occur in i20
+
+bt21 <- binom.test(sum(data[i21,"Drought"]), length(i21), p = 0.5) # fail to reject the null, p of success is 0.42, p-value = 0.7905 (not significant) ~ drought is just as likely to occur in i21
+
+## Include 2014
+
+# No Drought
+data[109,"Drought"] <- c(0) # no drought
+
+bt21d0 <- binom.test(sum(data[i21d,"Drought"]), length(i21d), p = 0.5) # fail to reject the null, p of success is 0.4, p-value = 0.6072 (not significant) ~ drought is just as likely to occur in i21d
+
+# Drought
+data[109,"Drought"] <- c(1) # drought
+
+bt21d1 <- binom.test(sum(data[i21d,"Drought"]), length(i21d), p = 0.5) # fail to reject the null, p of success is 0.467, p-value = 1 (not significant) ~ drought is just as likely to occur in i21d
+
+```
+
+For the 20th century group (1906-1999), the results are that we reject the null hypothesis, with a p-value < 0.05.
+
+```{r, echo=FALSE}
+bt20
+```
+
+The interpretation is: we reject the null hypothesis, meaning drought years are less likely to occur in the 20th century than expected; our expectation in the way we set up the test is that drought will occur half the time... which is not a realistic expectation, but provides a way to compare to the 21st century).
+
+For the 21st century group (2000-2013), the results are that we fail to reject the null hypothesis, with a p-value > 0.05.
+
+
+```{r, echo=FALSE}
+bt21
+```
+
+The interpretation is: we fail to reject the null, meaning drought years occur just as frequently in 21st century as non-drought years. This can be compared to the 20th century, but results are not really reliable as the sample size for the 21st century group is much smaller.
+
+Adding in 2014 as either a drought (value = 1) or non-drought (value = 0) does not change the results: for the 21st century group, test results suggest drought years are just as likely to occur as non-drought years.
+
+## Fisher Test
+
+This is a contingency table test, meaning for a table of year groups (20th and 21st century groups) and classifications (drought year, non-drought year), it asks: are the levels of the row variables (year groups) diferentially distributed over levels of the column variables (drought classification). So, it's a more direct comparison BETWEEN the two year groups, instead of comparing each century, independnetly, to some theoretical expectation.
+
+The Fisher test is actually a test of a null hypothesis of independence of rows and columns (as in the contingency table described above). However, the null of conditional independence is equivalent to the hypothesis that the odds ratio equals one. This is used when sample sizes are small (as opposed to a Chi Squared Test)
+
+Here, the null hypothesis is that odds ratio is equal to 1, meaning that drought proportions in each year group are the same.
+
+```{r, echo=FALSE}
+#### Fisher Test: 
+
+# Contingency table:
+
+tb <- matrix(NA, nrow=2, ncol=2, dimnames = list(c("i20", "i21"), c("D", "N-D")))
+
+tb["i20","D"] <- sum(data[i20,"Drought"])
+tb["i20","N-D"] <- length(i20) - sum(data[i20,"Drought"])
+tb["i21","D"] <- sum(data[i21,"Drought"])
+tb["i21","N-D"] <- length(i21) - sum(data[i21,"Drought"])
+
+ft <- fisher.test(tb) # FTRN; sample estimated odds ratio = 0.59; p-value = 0.375
+
+# no drought 2014
+data[109,"Drought"] <- c(0) # no drought
+
+tb["i21","D"] <- sum(data[i21d,"Drought"])
+tb["i21","N-D"] <- length(i21d) - sum(data[i21d,"Drought"])
+
+ftd0 <- fisher.test(tb) # FTRN (more strongly); sample estimated odds ratio = 0.67; p-value = 0.5548
+
+# drought 2014
+data[109,"Drought"] <- c(1) # drought
+
+tb["i21","D"] <- sum(data[i21d,"Drought"])
+tb["i21","N-D"] <- length(i21d) - sum(data[i21d,"Drought"])
+
+ftd1 <- fisher.test(tb) # FTRN (more weakly); sample estimated odds ratio = 0.51; p-value = 0.2474
+
+```
+
+The Fisher test results for comparison of 20th and 20th century groups (not including 2014) is that we fail to reject the null of (essentially) no-difference between the groups, with a p-value > 0.05.
+
+
+```{r, echo=FALSE}
+ft
+```
+
+Results fail to reject the null hypothesis, therefore, the results do not provide any evidence against the assumption of independence, which means the test suggests you cannot claim any difference in the proportions of drought occurance between the two year groups.
+
+Including 2014, either as a drought or non-drought year, does not change the results, only provides slightly more weak or strong evidence (in the form of sample estimated odds ratios and p-values) for accepting the null hypothesis of no difference.
+
+### Different year groupings
+
+If I decide to split the year groupings into equal groups: 1906-1959 and 1960-2013 (or 1960-2014), the results instead suggest a weak difference between the year groups. The test results suggest that the odds ratio (proportion of droughts in each group) are no longer statistically equivalent; drought in the latter period may be more likely.
+
+```{r, echo=FALSE}
+
+i1 <- 1:54
+i2 <- 55:108
+i2d <- 55:109
+
+#### Fisher Test: 
+
+# Contingency table:
+
+tb <- matrix(NA, nrow=2, ncol=2, dimnames = list(c("i1", "i2"), c("D", "N-D")))
+
+tb["i1","D"] <- sum(data[i1,"Drought"])
+tb["i1","N-D"] <- length(i1) - sum(data[i1,"Drought"])
+tb["i2","D"] <- sum(data[i2,"Drought"])
+tb["i2","N-D"] <- length(i2) - sum(data[i2,"Drought"])
+
+ft_new <- fisher.test(tb) # reject the null at the 90% CI, but not at 95% (weak reject); sample estimated odds ratio = 0.4645615 ; p-value = 0.09934
+
+# no drought 2014
+data[109,"Drought"] <- c(0) # no drought
+
+tb["i2","D"] <- sum(data[i2d,"Drought"])
+tb["i2","N-D"] <- length(i2d) - sum(data[i2d,"Drought"])
+
+ftd0_new <- fisher.test(tb) # ~ reject the null at the 90% CI; sample estimated odds ratio =  0.478; p-value = 0.1008
+
+# drought 2014
+data[109,"Drought"] <- c(1) # drought
+
+tb["i2","D"] <- sum(data[i2d,"Drought"])
+tb["i2","N-D"] <- length(i2d) - sum(data[i2d,"Drought"])
+
+ftd1_new <- fisher.test(tb) # reject the null at the 90% CI (more strongly); sample estimated odds ratio = 0.44; p-value = 0.066
+
+```
+
+The Fisher test result for comparison of 1906-1959 and 1960-2013 century groups (not including 2014) is that we reject the null of no-difference between the groups, but only with a p-value < 0.1.
+
+```{r, echo=FALSE}
+ft_new
+```
+
+This means the test rejects the null hypothesis (of equal proportions) at the 90% confidence level only. Including 2014 as a drought or non-drought year does not change this result, only makes the p-value slightly less or more significant, respectively; the p-values for both remain at the 90% level, however.
+
+In this alternate year grouping, the confidence interval around the odds interval is also much smaller (more reliable estimate).
+
+```{r, eval=FALSE, echo=FALSE}
+###### Chi‐Square Test for equality of proportions: This is an approximation to a test for whether two 'populations' (year groups) have the same frequency of drought. This is a also a contingency table test.
+
+# the null hypothesis is that the joint distribution of the cell counts in a 2-dimensional contingency table is the product of the row and column marginals.
+
+tb <- matrix(NA, nrow=2, ncol=2, dimnames = list(c("i20", "i21"), c("D", "N-D")))
+
+tb["i20","D"] <- sum(data[i20,"Drought"])
+tb["i20","N-D"] <- length(i20) - sum(data[i20,"Drought"])
+tb["i21","D"] <- sum(data[i21,"Drought"])
+tb["i21","N-D"] <- length(i21) - sum(data[i21,"Drought"])
+
+ct <- chisq.test(tb)
+
+# no drought 2014
+data[109,"Drought"] <- c(0) # no drought
+
+tb["i21","D"] <- sum(data[i21d,"Drought"])
+tb["i21","N-D"] <- length(i21d) - sum(data[i21d,"Drought"])
+
+ctd0 <- chisq.test(tb)
+
+# drought 2014
+data[109,"Drought"] <- c(1) # drought
+
+tb["i21","D"] <- sum(data[i21d,"Drought"])
+tb["i21","N-D"] <- length(i21d) - sum(data[i21d,"Drought"])
+
+ctd1 <- chisq.test(tb)
+
+##!!## gives an error becuse so few observations in i21
+
+```
+
