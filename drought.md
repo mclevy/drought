@@ -6,8 +6,6 @@ Chosen year groupings are the 20th century (1906-1999) and 21st century (2000-20
 
 Interpretation of results actually changes depending on the test used, and are limited by way of the 21st century group being much smaller in sample size. 
 
-My interpretation of the binomial test is slightly different than what appeared in the Excel sheet, but they should be the same test, and looks like results are as well...
-
 
 
 
